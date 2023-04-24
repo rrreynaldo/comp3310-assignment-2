@@ -22,7 +22,7 @@ public class ClientGopher {
     static BufferedReader inputStream;
     static BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
 
-    static ArrayList<String> infoList = new ArrayList<>();
+    static String downloadFolderName = "crawl-download";
 
     public ClientGopher() {
     }
@@ -30,6 +30,7 @@ public class ClientGopher {
     public static void main(String[] args) throws IOException {
         if (args.length != 2) {
             System.out.println("The usage of the command is ./ClientTCP {address} {port}");
+            return;
         } else {
             address = args[0];
             port = Integer.parseInt(args[1]);
@@ -49,7 +50,7 @@ public class ClientGopher {
         // Closing the socket connection
         socket.close();
         while(true){
-            // Opening a new socket
+            // Opening a new socket connection
             connectSocket();
 
             // Prompting a new selector from the user
@@ -76,8 +77,8 @@ public class ClientGopher {
                 if (directoryNavigation.getSubDirectory() != null) {
                     directoryNavigation = directoryNavigation.getSubDirectory();
                 }
-            } else if (directoryNavigation.hasFilePath(userCommand)) {
-                downloadFile(directoryNavigation.getFileFromPath(userCommand));
+            } else if (directoryNavigation.hasTextFilePath(userCommand)) {
+                downloadFile(directoryNavigation.getTextFileFromPath(userCommand));
                 continue;
             } else {
                 Directory subDirectory = new Directory(userCommand);
@@ -105,10 +106,17 @@ public class ClientGopher {
         System.out.println("client: closed socket and terminating");
     }
 
-    static ArrayList<File> visitedDirectories = new ArrayList<>();
+    static ArrayList<File> visitedPath = new ArrayList<>();
+    static ArrayList<File> uniquePath = new ArrayList<>();
+    static ArrayList<File> uniqueName = new ArrayList<>();
+    static ArrayList<File> uniqueNameAndPath = new ArrayList<>();
+    static ArrayList<File> textFileListTotal = new ArrayList<>();
+    static ArrayList<File> binaryFileListTotal = new ArrayList<>();
+
     static ArrayList<String> uniqueCode = new ArrayList<>();
 
     public static void crawl() throws IOException {
+        // Opening a new socket connection
         connectSocket();
         Directory directoryNavigation = new Directory();
 
@@ -116,39 +124,59 @@ public class ClientGopher {
         outputStream.write(directoryNavigation + "\r\n");
         outputStream.flush();
 
-        // Displaying the message from the server
+        // Parsing the message from the server at the root/initial response
         parseResponse(inputStream, directoryNavigation);
-        visitedDirectories.add(new File(ContentType.DIRECTORY, "root",
+        // Adding the root path to the visitedDirectories List
+        visitedPath.add(new File(ContentType.DIRECTORY, "root",
                                     directoryNavigation.getCurrentPath(), address, port));
+        // Recurse through the sub-directory
         crawlHelper(directoryNavigation);
 
         int count = 1;
-        for (File file : visitedDirectories) {
+        for (File file : visitedPath) {
             System.out.println(count + "-> Name: " + file.getName() + ", Path: " + file.getPath());
             count++;
         }
 
-        System.out.println("total count: " + visitedDirectories.size());
+        System.out.println("total count: " + visitedPath.size());
         socket.close();
     }
 
     public static void crawlHelper(Directory directory) throws IOException {
+        // Download all the text file in the current directory path
+        for (File textFile : directory.getTextFileList()) {
+
+            downloadFile(textFile);
+        }
+
+        // Download all the binary file in the current directory path
+        for (File binaryFile : directory.getBinaryFileList()) {
+            downloadFile(binaryFile);
+        }
+
+        // Transversing through all the sub-directory
         for (File dir : directory.getDirectoryList()) {
-            if (!visitedDirectories.contains(dir)) {
-                visitedDirectories.add(dir);
-                Directory newDirectory = new Directory(dir.getPath());
+            if (!visitedPath.contains(dir)) {
+                // Opening a new socket connection
                 connectSocket();
 
+                // Adding the current directory in the visitedDirectories List
+                visitedPath.add(dir);
+                Directory subDirectory = new Directory(dir.getPath());
+
                 // Request the content of the new directory
-                outputStream.write(newDirectory.getCurrentPath() + "\r\n");
+                outputStream.write(subDirectory.getCurrentPath() + "\r\n");
                 outputStream.flush();
 
                 // To ensure that there is no remaining data from the previous server's response
                 while (inputStream.ready()) {
                     inputStream.readLine();
                 }
-                parseResponse(inputStream, newDirectory);
-                crawlHelper(newDirectory);
+
+                // Parsing the response from the server
+                parseResponse(inputStream, subDirectory);
+                // Recurse through the sub-directory
+                crawlHelper(subDirectory);
             }
         }
     }
@@ -161,29 +189,33 @@ public class ClientGopher {
         outputStream.write(file.getPath() + "\r\n");
         outputStream.flush();
 
-        // Create the "crawl-download" directory if it doesn't exist
-        java.io.File downloadDirectory = new java.io.File("crawl-download");
+        // Create the crawl download directory if it doesn't exist
+        java.io.File downloadDirectory = new java.io.File(downloadFolderName);
         if (!downloadDirectory.exists()) {
             downloadDirectory.mkdir();
         }
 
+        // Parsing the file name of the downloaded file
+        String fileName = file.getPath().substring(1).replace("/", "-");
+        // Truncate the name of the file to a maximum of 255 if it is too long
+        fileName = fileName.substring(0, Math.min(fileName.length(), 255));
+
         // Create a local file to save the content
-        java.io.File localFile = new java.io.File(downloadDirectory, file.getPath().substring(1));
+        java.io.File localFile = new java.io.File(downloadDirectory, fileName);
         FileOutputStream fileOutputStream = new FileOutputStream(localFile);
-        BufferedWriter fileWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream));
+        InputStream socketInputStream = socket.getInputStream();
+
 
         // Read the content of the file from the Gopher server and save it to the local file
-        String serverResponse;
-        while ((serverResponse = inputStream.readLine()) != null) {
-            if (serverResponse.equals(".")) {
-                break;
-            }
-            fileWriter.write(serverResponse);
-            fileWriter.newLine();
+        byte[] buffer = new byte[4096];     // A default buffer size of 4096 bytes
+        int bytesRead;      // Keeping track of the bytes read from the server
+        while ((bytesRead = socketInputStream.read(buffer)) != -1) {
+            System.out.println(bytesRead);
+            fileOutputStream.write(buffer, 0, bytesRead);
         }
 
-        // Close the local file and the connection
-        fileWriter.close();
+        // Close the local file, reader and the socket connection
+        socketInputStream.close();
         fileOutputStream.close();
         socket.close();
     }
@@ -233,6 +265,20 @@ public class ClientGopher {
                         directoryFile.setFileType(ContentType.DIRECTORY);
                         directory.getContent().add(directoryFile);
                         directory.getDirectoryList().add(directoryFile);
+                    } else if (firstChar == '9') {
+                        String[] fileContent = serverResponse.split("\t");
+                        File binaryFile = new File(fileContent[0].substring(1),
+                                            fileContent[1], fileContent[2],
+                                            Integer.parseInt(fileContent[3]));
+                        binaryFile.setFileType(ContentType.BINARY_FILE);
+                        directory.getContent().add(binaryFile);
+                        directory.getBinaryFileList().add(binaryFile);
+                    } else if (firstChar == '3') {
+                        String[] fileContent = serverResponse.split("\t");
+                        File errorFile = new File(fileContent[0].substring(1));
+                        errorFile.setFileType(ContentType.ERROR_MESSAGE);
+                        directory.getContent().add(errorFile);
+                        directory.getErrorList().add(errorFile);
                     }
                 }
             }

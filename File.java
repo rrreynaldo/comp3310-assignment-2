@@ -8,6 +8,10 @@ public class File {
     public File() {
     }
 
+    public File(String name) {
+        this.name = name;
+    }
+
     public File(String name, String path, String host, int port) {
         this.name = name;
         this.path = path;
@@ -67,6 +71,8 @@ public class File {
         return switch (fileType) {
             case TEXT_FILE -> "(FILE)" + "\t" + name + "\t" + "[" + path + "]";
             case DIRECTORY -> "(DIR)" + "\t" + name + "\t" + "[" + path + "]";
+            case ERROR_MESSAGE -> "(ERROR)" + "\t" + name;
+            case BINARY_FILE -> "(BIN)" + "\t" + name + "\t" + "[" + path + "]";
             default -> name + "\t" + "[" + path + "]";
         };
     }
