@@ -1,9 +1,13 @@
+import java.util.ArrayList;
+import java.util.Objects;
+
 public class File {
     ContentType fileType;
     String name;
     String path;
     String host;
     int port;
+    int size;
 
     public File() {
     }
@@ -67,6 +71,14 @@ public class File {
         this.port = port;
     }
 
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
     public String prettyPrint() {
         return switch (fileType) {
             case TEXT_FILE -> "(FILE)" + "\t" + name + "\t" + "[" + path + "]";
@@ -77,6 +89,19 @@ public class File {
         };
     }
 
+    public boolean compareFilePath(ArrayList<File> fileList) {
+        for (File file : fileList) {
+            if (file.getPath().equals(this.getPath())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String filePrint() {
+        return "Name: \"" + name + "\", Path: " + path + ", Size: " + size;
+    }
+
     @Override
     public String toString() {
         return "File{" +
@@ -85,12 +110,22 @@ public class File {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(name, path, host, port);
+    }
+
+    @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof File)) {
-            return false;
-        } else {
-            File file = (File) obj;
-            return name.equals(file.getName());
+        if (this == obj) {
+            return true;
         }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        File file = (File) obj;
+        return Objects.equals(name, file.name) &&
+                Objects.equals(path, file.path) &&
+                Objects.equals(host, file.host) &&
+                port == file.port;
     }
 }

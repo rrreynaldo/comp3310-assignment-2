@@ -5,8 +5,12 @@
 
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class ClientGopher {
     static int port = 70;   // The default port for Gopher Protocol
@@ -28,12 +32,20 @@ public class ClientGopher {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 2) {
-            System.out.println("The usage of the command is ./ClientTCP {address} {port}");
+        if (args.length < 2) {
+            System.out.println("The usage of the command is ./ClientTCP {address} {port} [crawl]");
             return;
-        } else {
-            address = args[0];
-            port = Integer.parseInt(args[1]);
+        }
+        address = args[0];
+        port = Integer.parseInt(args[1]);
+
+        // Check if the crawl argument is provided
+        boolean shouldCrawl = args.length == 3 && args[2].equalsIgnoreCase("crawl");
+
+        // Call the crawl function if the crawl argument is provided
+        if (shouldCrawl) {
+            crawl();
+            return;
         }
 
         // Opening a socket to the server
@@ -107,15 +119,17 @@ public class ClientGopher {
     }
 
     static ArrayList<File> visitedPath = new ArrayList<>();
-    static ArrayList<File> uniquePath = new ArrayList<>();
-    static ArrayList<File> uniqueName = new ArrayList<>();
-    static ArrayList<File> uniqueNameAndPath = new ArrayList<>();
-    static ArrayList<File> textFileListTotal = new ArrayList<>();
-    static ArrayList<File> binaryFileListTotal = new ArrayList<>();
+    static ArrayList<File> directoryCrawlList = new ArrayList<>();
+    static ArrayList<File> internalDirCrawList = new ArrayList<>();
+    static ArrayList<File> externalDirCrawlList = new ArrayList<>();
+    static ArrayList<File> textFileCrawlList = new ArrayList<>();
+    static ArrayList<File> binaryFileCrawlList = new ArrayList<>();
+    static ArrayList<File> errorCrawList = new ArrayList<>();
 
     static ArrayList<String> uniqueCode = new ArrayList<>();
 
     public static void crawl() throws IOException {
+        System.out.println("--".repeat(5) + " Started Crawling " + "--".repeat(5));
         // Opening a new socket connection
         connectSocket();
         Directory directoryNavigation = new Directory();
@@ -132,31 +146,63 @@ public class ClientGopher {
         // Recurse through the sub-directory
         crawlHelper(directoryNavigation);
 
-        int count = 1;
-        for (File file : visitedPath) {
-            System.out.println(count + "-> Name: " + file.getName() + ", Path: " + file.getPath());
-            count++;
+        // Removing all the duplicate directory by using HashSet
+        directoryCrawlList = new ArrayList<>(new HashSet<>(directoryCrawlList));
+
+        // Separating the internal and external directory list
+        for (File file : directoryCrawlList) {
+            if (!file.getHost().equals(address)) {
+                externalDirCrawlList.add(file);
+            } else {
+                internalDirCrawList.add(file);
+            }
         }
 
-        System.out.println("total count: " + visitedPath.size());
+        crawlerReport("Summary of the Unique Path",
+                        "Total Unique Path",
+                        visitedPath, "unique-path.txt");
+        crawlerReport("Summary of all the Directory (Internal and External)",
+                        "Total Internal and External Directory Count",
+                        directoryCrawlList, "internal-external-directory.txt");
+        crawlerReport("Summary of all the Internal Directory",
+                        "Total Internal Directory Count",
+                        internalDirCrawList, "internal-directory.txt");
+        crawlerReport("Summary of all the External Directory",
+                        "Total External Directory Count",
+                        externalDirCrawlList, "external-directory.txt");
+        crawlerReport("Summary of all the Text File", "Total Text File Count", textFileCrawlList, "text-file.txt");
+        crawlerReport("Summary of all the Binary File", "Total Binary File Count", binaryFileCrawlList, "binary-file.txt");
+        crawlerReport("Summary of all the Error Message", "Total Error Message", errorCrawList, "error-mess.txt");
+        crawlFileReport("Summary of the Smallest and Largest Text File", "Text File", textFileCrawlList);
+        crawlFileReport("Summary of the Smallest and Largest Binary File", "Binary File", binaryFileCrawlList);
+
         socket.close();
     }
 
     public static void crawlHelper(Directory directory) throws IOException {
-        // Download all the text file in the current directory path
+        // Download all the text file in the current directory path and update the file size
         for (File textFile : directory.getTextFileList()) {
-
             downloadFile(textFile);
+            textFileCrawlList.add(textFile);
         }
 
-        // Download all the binary file in the current directory path
+        // Download all the binary file in the current directory path and update the file size
         for (File binaryFile : directory.getBinaryFileList()) {
             downloadFile(binaryFile);
+            binaryFileCrawlList.add(binaryFile);
         }
+
+        // Adding all the directory from the current path
+        directoryCrawlList.addAll(directory.getDirectoryList());
+
+        // Adding all the error message present in the current path
+        errorCrawList.addAll(directory.getErrorList());
 
         // Transversing through all the sub-directory
         for (File dir : directory.getDirectoryList()) {
-            if (!visitedPath.contains(dir)) {
+            if (!(dir.compareFilePath(visitedPath))) {
+                System.out.println("Visiting Path: " + dir.getPath());
+
                 // Opening a new socket connection
                 connectSocket();
 
@@ -178,6 +224,114 @@ public class ClientGopher {
                 // Recurse through the sub-directory
                 crawlHelper(subDirectory);
             }
+        }
+    }
+
+    public static void crawlerReport(String title, String countName, ArrayList<File> data, String outputPath) {
+        String directory = "crawl-report";
+        try {
+            Files.createDirectories(Paths.get(directory));
+        } catch (IOException e) {
+            System.out.println("Error creating directory: " + e.getMessage());
+            return;
+        }
+
+        String outputFilePath = Paths.get(directory, outputPath).toString();
+        try (PrintWriter fileWriter = new PrintWriter(Files.newBufferedWriter(Paths.get(outputFilePath)))) {
+            printToBoth(fileWriter, "-".repeat(3) + " " + title + " " + "-".repeat(3));
+            int count = 1;
+            for (File file : data) {
+                if (file.getFileType() == ContentType.TEXT_FILE ||
+                        file.getFileType() == ContentType.BINARY_FILE) {
+                    printToBoth(fileWriter, count + "-> Name: \"" + file.getName() +
+                            "\", Path: " + file.getPath() +
+                            ", Size: " + file.getSize() + " Bytes");
+                } else if (file.getFileType() == ContentType.ERROR_MESSAGE) {
+                    printToBoth(fileWriter, count + "-> Name: \"" + file.getName() +
+                            "\", From Path: " + file.getPath());
+                } else {
+                    printToBoth(fileWriter, count + "-> Name: \"" + file.getName() + "\", Path: " + file.getPath() +
+                            ", Address: " + file.getHost() + ", Port: " + file.getPort());
+                }
+                count++;
+            }
+            printToBoth(fileWriter, "-".repeat(8 + title.length()));
+            printToBoth(fileWriter, countName + ": " + data.size());
+            printToBoth(fileWriter, "-".repeat(8 + title.length()));
+            printToBoth(fileWriter, "-".repeat(8 + title.length()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void crawlFileReport(String title, String countName, ArrayList<File> data) {
+        // Find the smallest and largest files using the max function and a comparator
+        File smallest = data.stream()
+                .min(Comparator.comparingInt(File::getSize))
+                .orElse(null);
+
+        File largest = data.stream()
+                .max(Comparator.comparingInt(File::getSize))
+                .orElse(null);
+
+        // Parsing the file name for the report
+        String fileName = countName.toLowerCase().replace(" ", "-");
+
+        System.out.println("-".repeat(3) + " " + title + " " + "-".repeat(3));
+        System.out.println("The Smallest " + countName + ": " + smallest.filePrint());
+        System.out.println("The Smallest " + countName + " file size: " + smallest.getSize() + " Bytes");
+        System.out.println("The Largest " + countName + ": " + largest.filePrint());
+        System.out.println("The Largest " + countName + " file size: " + largest.getSize() + " Bytes");
+        System.out.println("-".repeat(8 + title.length()));
+        System.out.println("The content of the file are not displayed to the terminal output due to the large text.");
+        System.out.println("Instead, the content can be found on the " + fileName + "-content-report.txt under the crawl-report folder." );
+        System.out.println("-".repeat(8 + title.length()));
+        System.out.println("-".repeat(8 + title.length()));
+
+        // Writing the content of the file to a report
+        printFileContent(smallest, largest, title, fileName + "-content-report.txt", countName);
+    }
+
+    private static void printToBoth(PrintWriter fileWriter, String message) {
+        System.out.println(message);
+        fileWriter.println(message);
+    }
+
+    private static void printFileContent(File smallestFile, File largestFile, String title, String outputFileName, String reportObject) {
+        String smallestFileName = smallestFile.getPath().substring(1).replace("/", "-");
+        smallestFileName = smallestFileName.substring(0, Math.min(smallestFileName.length(), 255));
+        java.io.File smallestLocalFile = new java.io.File("./crawl-download", smallestFileName);
+
+        String largestFileName = largestFile.getPath().substring(1).replace("/", "-");
+        largestFileName = largestFileName.substring(0, Math.min(largestFileName.length(), 255));
+        java.io.File largestLocalFile = new java.io.File("./crawl-download", largestFileName);
+
+        try {
+            // Create the "crawl-report" directory if it doesn't exist
+            Files.createDirectories(Paths.get("crawl-report"));
+
+            // Save the output file in the "crawl-report" folder
+            Path outputFile = Paths.get("crawl-report", outputFileName);
+
+            String lineBreaker = "-".repeat(8 + title.length()) + "\n";
+
+            String smallestContent = new String(Files.readAllBytes(Paths.get(smallestLocalFile.toURI()))).replace("\r", "");
+            String largestContent = new String(Files.readAllBytes(Paths.get(largestLocalFile.toURI()))).replace("\r", "");
+
+            // Use try-with-resources to ensure the PrintWriter is closed
+            try (PrintWriter fileWriter = new PrintWriter(Files.newBufferedWriter(outputFile))) {
+                fileWriter.write("-".repeat(3) + " " + title + " " + "-".repeat(3) + "\n");
+                fileWriter.write("Smallest " + reportObject + ": " + smallestFile.getPath() + "\n");
+                fileWriter.write("Content: " + smallestContent + "\n");
+                fileWriter.write(lineBreaker);
+                fileWriter.write("Largest " + reportObject + ": " + largestFile.getPath() + "\n");
+                fileWriter.write("Content: " + largestContent + "\n");
+                fileWriter.write(lineBreaker);
+                fileWriter.write(lineBreaker);
+            }
+        } catch (IOException e) {
+            System.out.println("Failed to read the content of the file: " + smallestFileName);
+            e.printStackTrace();
         }
     }
 
@@ -210,9 +364,11 @@ public class ClientGopher {
         byte[] buffer = new byte[4096];     // A default buffer size of 4096 bytes
         int bytesRead;      // Keeping track of the bytes read from the server
         while ((bytesRead = socketInputStream.read(buffer)) != -1) {
-            System.out.println(bytesRead);
             fileOutputStream.write(buffer, 0, bytesRead);
         }
+
+        // Update the size attribute of the File object
+        file.setSize((int) localFile.length());
 
         // Close the local file, reader and the socket connection
         socketInputStream.close();
@@ -227,8 +383,12 @@ public class ClientGopher {
             // Redefining the stream for the new socket
             outputStream = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             inputStream = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            // Recording the current timestamp of the connection
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+            LocalDateTime timestamp = LocalDateTime.now();
+            String formattedTimestamp = timestamp.format(formatter);
             // Providing a reference for the new socket
-            System.out.println("client: created socket connected to local port " + socket.getLocalPort() +
+            System.out.println("[" + formattedTimestamp +"] client: created socket connected to local port " + socket.getLocalPort() +
                                 " and to remote address " + socket.getInetAddress() +
                                 " and port " + socket.getPort());
         } catch (IOException e) {
@@ -260,8 +420,8 @@ public class ClientGopher {
                     } else if (firstChar == '1') {
                         String[] fileContent = serverResponse.split("\t");
                         File directoryFile = new File(fileContent[0].substring(1),
-                                fileContent[1], fileContent[2],
-                                Integer.parseInt(fileContent[3]));
+                                            fileContent[1], fileContent[2],
+                                            Integer.parseInt(fileContent[3]));
                         directoryFile.setFileType(ContentType.DIRECTORY);
                         directory.getContent().add(directoryFile);
                         directory.getDirectoryList().add(directoryFile);
@@ -277,8 +437,11 @@ public class ClientGopher {
                         String[] fileContent = serverResponse.split("\t");
                         File errorFile = new File(fileContent[0].substring(1));
                         errorFile.setFileType(ContentType.ERROR_MESSAGE);
+                        errorFile.setPath(directory.getCurrentPath());
                         directory.getContent().add(errorFile);
                         directory.getErrorList().add(errorFile);
+                    } else {
+                        System.out.println("Code not taken care of: " + firstChar);
                     }
                 }
             }
