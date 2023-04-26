@@ -1,5 +1,41 @@
-# COMP3310-Assignment-2
-## Indexing a Gopher
+# COMP3310-Assignment-2: Indexing a Gopher
+## Introduction
+This is a simple Java-based Gopher crawler. 
+The main purpose of this program is to crawl Gopher servers and fetch resources using the Gopher protocol. 
+The primary source code file is ClientGopher.java.
+
+## Requirements
+Java Development Kit (JDK) 8 or above. It is recommended to compile the source code with JDK 17 or 18.
+
+## Compilation
+To compile the program, navigate to the directory containing the ClientGopher.java file and run the following command:
+
+`javac ClientGopher.java`
+
+## Running the Crawler
+To run the crawler, use the following command:
+
+`java ClientGopher.java [address] [port] crawl`
+
+Replace [address] and [port] with the target Gopher server's address and port number.
+
+### Example
+
+`java ClientGopher.java comp3310.ddns.net 70 crawl`
+
+## Using the Crawling Script
+Alternatively, you can run the crawler using the provided crawl-script.sh script. 
+This script is preconfigured to crawl the Gopher server at comp3310.ddns.net on port 70.
+
+To run the script, execute the following command:
+
+`./crawl-script.sh`
+
+You may need to grant execute permission to the script before running it:
+
+`chmod +x crawl-script.sh`
+
+Run the command only in the case that the code requires further permission.
 
 ## Code Algorithm to Crawl the Server
 The codes implement a depth first search algorithm which transverse down to every directory in the server.
