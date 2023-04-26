@@ -16,22 +16,24 @@ public class ClientGopher {
     static int port = 70;   // The default port for Gopher Protocol
     static String address = "localhost";
 
+    // An array containing the predefined command for the interactive Gopher Client
     static ArrayList<String> exitCommand = new ArrayList<>(Arrays.asList("q", "Q"));
     static ArrayList<String> backCommand = new ArrayList<>(Arrays.asList("b", "back"));
     static ArrayList<String> forwardCommand = new ArrayList<>(Arrays.asList("f", "forward"));
     static ArrayList<String> crawlCommand = new ArrayList<>(Arrays.asList("crawl", "crw"));
 
-    static Socket socket;
+    static Socket socket;       // Socket of the connection to the server
     static BufferedWriter outputStream;
     static BufferedReader inputStream;
     static BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
 
-    static String downloadFolderName = "crawl-download";
+    static String downloadFolderName = "crawl-download";    // The repo name for the downloaded content
 
     public ClientGopher() {
     }
 
     public static void main(String[] args) throws IOException {
+        // Checks if the arguments for the code is parsed properly
         if (args.length < 2) {
             System.out.println("The usage of the command is ./ClientTCP {address} {port} [crawl]");
             return;
@@ -93,6 +95,7 @@ public class ClientGopher {
                 downloadFile(directoryNavigation.getTextFileFromPath(userCommand));
                 continue;
             } else {
+                // Setting a linked directory from the previous and current directory
                 Directory subDirectory = new Directory(userCommand);
                 subDirectory.setParentDirectory(directoryNavigation);
                 directoryNavigation.setSubDirectory(subDirectory);
@@ -114,6 +117,7 @@ public class ClientGopher {
             // Closing the old socket
             socket.close();
         }
+        // Closing the scoket
         socket.close();
         System.out.println("client: closed socket and terminating");
     }
@@ -127,6 +131,11 @@ public class ClientGopher {
     static ArrayList<File> binaryFileCrawlList = new ArrayList<>();     // List of all binary file
     static ArrayList<File> errorCrawList = new ArrayList<>();           // List of all the error code
 
+    /**
+     * A method that will crawl and fetch all of the resources from a server
+     * @throws IOException an I/O error occurs while establishing the socket connection,
+     *  *                  reading from the input stream, writing to the output stream, or closing the socket
+     */
     public static void crawl() throws IOException {
         System.out.println("--".repeat(5) + " Started Crawling " + "--".repeat(5));
         // Opening a new socket connection
@@ -173,14 +182,15 @@ public class ClientGopher {
         crawlFileReport("Summary of the Smallest and Largest Text File", "Text File", textFileCrawlList);
         crawlFileReport("Summary of the Smallest and Largest Binary File", "Binary File", binaryFileCrawlList);
 
-        // Closing the connection of the so
+        // Closing the connection of the socket
         socket.close();
     }
 
     /**
      * This is a helper method for the crawler that is used to recurse through all the sub directory in the server
      * @param directory The current directory to crawl
-     * @throws IOException
+     * @throws IOException an I/O error occurs while establishing the socket connection,
+     *                     reading from the input stream, writing to the output stream, or closing the socket
      */
     public static void crawlHelper(Directory directory) throws IOException {
         // Download all the text file in the current directory path and update the file size
@@ -238,6 +248,7 @@ public class ClientGopher {
      */
     public static void crawlerReport(String title, String countName, ArrayList<File> data, String outputPath) {
         String directory = "crawl-report";
+        // Creating the directory
         try {
             Files.createDirectories(Paths.get(directory));
         } catch (IOException e) {
@@ -245,8 +256,10 @@ public class ClientGopher {
             return;
         }
 
+        // Getting the output file of the report
         String outputFilePath = Paths.get(directory, outputPath).toString();
         try (PrintWriter fileWriter = new PrintWriter(Files.newBufferedWriter(Paths.get(outputFilePath)))) {
+            // Creating a fancy summary for the resource
             printToBoth(fileWriter, "-".repeat(3) + " " + title + " " + "-".repeat(3));
             int count = 1;
             for (File file : data) {
@@ -370,6 +383,12 @@ public class ClientGopher {
         }
     }
 
+    /**
+     * A function used to download a text or binary file to a local storage
+     * @param file The file to be downloaded
+     * @throws IOException an I/O error occurs while establishing the socket connection,
+     *                     reading from the input stream, writing to the output stream, or closing the socket
+     */
     public static void downloadFile(File file) throws IOException {
         // Open a new socket connection
         connectSocket();
@@ -411,25 +430,38 @@ public class ClientGopher {
         socket.close();
     }
 
+    /**
+     * A helper method to truncate the filename if it exceeds 255 which is the maximum file name length
+     * @param fileName The file name
+     * @param maxLength The specified max length
+     * @return The truncated file name
+     */
     public static String truncateFilename(String fileName, int maxLength) {
+        // Checking if the current length is valid
         if (fileName.length() <= maxLength) {
             return fileName;
         }
 
+        // Getting information about the extension and file name
         int extensionIndex = fileName.lastIndexOf(".");
         String nameWithoutExtension = fileName;
         String extension = "";
 
+        // Combine the truncated file name and the extension
         if (extensionIndex != -1) {
             nameWithoutExtension = fileName.substring(0, extensionIndex);
             extension = fileName.substring(extensionIndex);
         }
 
+        // Return the truncated file name
         int nameLength = maxLength - extension.length();
         String truncatedName = nameWithoutExtension.substring(0, Math.min(nameWithoutExtension.length(), nameLength));
         return truncatedName + extension;
     }
 
+    /**
+     * A method to create a connection to the specified Gopher server
+     */
     public static void connectSocket() {
         try {
             // Creating a new socket instance
@@ -450,20 +482,27 @@ public class ClientGopher {
         }
     }
 
+    /**
+     * A method which parsed the responses from the server into different Java Class for easier manipulation
+     * @param inputStream A reader to read content from the server
+     * @param directory The current directory structure to parse the response
+     */
     public static void parseResponse(BufferedReader inputStream, Directory directory) {
-        String serverResponse;
+        String serverResponse;      // Response content from the server
         try {
             while ((serverResponse = inputStream.readLine()) != null) {
+                // Checks if the response read is at the end
                 if (serverResponse.equals(".")) {
                     break;
                 }
                 if (serverResponse.length() > 0) {
+                    // Getting the response code
                     char firstChar = serverResponse.charAt(0);
-                    if (firstChar == 'i') {
+                    if (firstChar == 'i') {     // Checking for information
                         String[] fileContent = serverResponse.split("\t");
                         directory.getContent().add(fileContent[0].substring(1));
                         directory.getInformationList().add(fileContent[0].substring(1));
-                    } else if (firstChar == '0') {
+                    } else if (firstChar == '0') {      // Checking for text file
                         String[] fileContent = serverResponse.split("\t");
                         File textFile = new File(fileContent[0].substring(1),
                                             fileContent[1], fileContent[2],
@@ -471,7 +510,7 @@ public class ClientGopher {
                         textFile.setFileType(ContentType.TEXT_FILE);
                         directory.getContent().add(textFile);
                         directory.getTextFileList().add(textFile);
-                    } else if (firstChar == '1') {
+                    } else if (firstChar == '1') {      // Checking for directory
                         String[] fileContent = serverResponse.split("\t");
                         File directoryFile = new File(fileContent[0].substring(1),
                                             fileContent[1], fileContent[2],
@@ -479,7 +518,7 @@ public class ClientGopher {
                         directoryFile.setFileType(ContentType.DIRECTORY);
                         directory.getContent().add(directoryFile);
                         directory.getDirectoryList().add(directoryFile);
-                    } else if (firstChar == '9') {
+                    } else if (firstChar == '9') {      // Checking for binary file
                         String[] fileContent = serverResponse.split("\t");
                         File binaryFile = new File(fileContent[0].substring(1),
                                             fileContent[1], fileContent[2],
@@ -487,15 +526,13 @@ public class ClientGopher {
                         binaryFile.setFileType(ContentType.BINARY_FILE);
                         directory.getContent().add(binaryFile);
                         directory.getBinaryFileList().add(binaryFile);
-                    } else if (firstChar == '3') {
+                    } else if (firstChar == '3') {      // Checking for error message
                         String[] fileContent = serverResponse.split("\t");
                         File errorFile = new File(fileContent[0].substring(1));
                         errorFile.setFileType(ContentType.ERROR_MESSAGE);
                         errorFile.setPath(directory.getCurrentPath());
                         directory.getContent().add(errorFile);
                         directory.getErrorList().add(errorFile);
-                    } else {
-                        System.out.println("Code not taken care of: " + firstChar);
                     }
                 }
             }
@@ -504,6 +541,10 @@ public class ClientGopher {
         }
     }
 
+    /**
+     * A method to display all the content of the directory
+     * @param directory The directory to display all the content
+     */
     public static void displayMessage(Directory directory) {
         for (Object content : directory.getContent()) {
             if (content instanceof String) {
