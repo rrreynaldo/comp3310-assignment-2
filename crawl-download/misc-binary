@@ -1,0 +1,6 @@
+Remember, the menu said that this was a _binary_ file - so this is _not_
+the end of the file - you have to keep reading until the server closes the
+connection!
+.
+Congratulations! Your client seems to be handling binary files (type 9)
+correctly :)

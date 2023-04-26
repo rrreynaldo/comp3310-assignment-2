@@ -1,0 +1,16 @@
+--- Summary of all the Text File ---
+1-> Name: "RFC 1436 (describes the Gopher protocol)", Path: /rfc1436.txt, Size: 37396 Bytes
+2-> Name: "About Us", Path: /acme/about, Size: 573 Bytes
+3-> Name: "Contact Us", Path: /acme/contact, Size: 422 Bytes
+4-> Name: "Anvils", Path: /acme/products/anvils, Size: 328 Bytes
+5-> Name: "Pianos", Path: /acme/products/pianos, Size: 246 Bytes
+6-> Name: "Paint (quick-drying)", Path: /acme/products/paint, Size: 178 Bytes
+7-> Name: "There is a wax statuette of Markus Buchorn here.", Path: /maze/statuette, Size: 38 Bytes
+8-> Name: "There is a floppy disk here.", Path: /maze/floppy, Size: 38 Bytes
+9-> Name: "Empty file", Path: /misc/empty.txt, Size: 3 Bytes
+10-> Name: "File with a very long filename", Path: /misc/loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong, Size: 20 Bytes
+11-> Name: "Deeply nested menus", Path: /misc/nestz, Size: 11 Bytes
+------------------------------------
+Total Text File Count: 11
+------------------------------------
+------------------------------------

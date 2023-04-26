@@ -1,0 +1,44 @@
+--- Summary of the Unique Path ---
+1-> Name: "root", Path: , Address: comp3310.ddns.net, Port: 70
+2-> Name: "ACME Rocket-Powered Products Pty. Ltd.", Path: /acme, Address: comp3310.ddns.net, Port: 70
+3-> Name: "Products", Path: /acme/products, Address: comp3310.ddns.net, Port: 70
+4-> Name: "A whole range of oversized traps...", Path: /acme/products/traps, Address: comp3310.ddns.net, Port: 70
+5-> Name: "Maze (don't get lost!)", Path: /maze/17, Address: comp3310.ddns.net, Port: 70
+6-> Name: "northwest", Path: /maze/18, Address: comp3310.ddns.net, Port: 70
+7-> Name: "up", Path: /maze/19, Address: comp3310.ddns.net, Port: 70
+8-> Name: "southeast", Path: /maze/20, Address: comp3310.ddns.net, Port: 70
+9-> Name: "down", Path: /maze/21, Address: comp3310.ddns.net, Port: 70
+10-> Name: "northwest", Path: /maze/22, Address: comp3310.ddns.net, Port: 70
+11-> Name: "northwest", Path: /maze/23, Address: comp3310.ddns.net, Port: 70
+12-> Name: "Miscellaneous Resources", Path: /misc, Address: comp3310.ddns.net, Port: 70
+13-> Name: "Empty menu", Path: /misc/empty, Address: comp3310.ddns.net, Port: 70
+14-> Name: "Deeply nested menus", Path: /misc/nesta, Address: comp3310.ddns.net, Port: 70
+15-> Name: "Deeply nested menus", Path: /misc/nestb, Address: comp3310.ddns.net, Port: 70
+16-> Name: "Deeply nested menus", Path: /misc/nestc, Address: comp3310.ddns.net, Port: 70
+17-> Name: "Deeply nested menus", Path: /misc/nestd, Address: comp3310.ddns.net, Port: 70
+18-> Name: "Deeply nested menus", Path: /misc/neste, Address: comp3310.ddns.net, Port: 70
+19-> Name: "Deeply nested menus", Path: /misc/nestf, Address: comp3310.ddns.net, Port: 70
+20-> Name: "Deeply nested menus", Path: /misc/nestg, Address: comp3310.ddns.net, Port: 70
+21-> Name: "Deeply nested menus", Path: /misc/nesth, Address: comp3310.ddns.net, Port: 70
+22-> Name: "Deeply nested menus", Path: /misc/nesti, Address: comp3310.ddns.net, Port: 70
+23-> Name: "Deeply nested menus", Path: /misc/nestj, Address: comp3310.ddns.net, Port: 70
+24-> Name: "Deeply nested menus", Path: /misc/nestk, Address: comp3310.ddns.net, Port: 70
+25-> Name: "Deeply nested menus", Path: /misc/nestl, Address: comp3310.ddns.net, Port: 70
+26-> Name: "Deeply nested menus", Path: /misc/nestm, Address: comp3310.ddns.net, Port: 70
+27-> Name: "Deeply nested menus", Path: /misc/nestn, Address: comp3310.ddns.net, Port: 70
+28-> Name: "Deeply nested menus", Path: /misc/nesto, Address: comp3310.ddns.net, Port: 70
+29-> Name: "Deeply nested menus", Path: /misc/nestp, Address: comp3310.ddns.net, Port: 70
+30-> Name: "Deeply nested menus", Path: /misc/nestq, Address: comp3310.ddns.net, Port: 70
+31-> Name: "Deeply nested menus", Path: /misc/nestr, Address: comp3310.ddns.net, Port: 70
+32-> Name: "Deeply nested menus", Path: /misc/nests, Address: comp3310.ddns.net, Port: 70
+33-> Name: "Deeply nested menus", Path: /misc/nestt, Address: comp3310.ddns.net, Port: 70
+34-> Name: "Deeply nested menus", Path: /misc/nestu, Address: comp3310.ddns.net, Port: 70
+35-> Name: "Deeply nested menus", Path: /misc/nestv, Address: comp3310.ddns.net, Port: 70
+36-> Name: "Deeply nested menus", Path: /misc/nestw, Address: comp3310.ddns.net, Port: 70
+37-> Name: "Deeply nested menus", Path: /misc/nestx, Address: comp3310.ddns.net, Port: 70
+38-> Name: "Deeply nested menus", Path: /misc/nesty, Address: comp3310.ddns.net, Port: 70
+39-> Name: "Nonexistent menu", Path: /misc/nonexistent, Address: comp3310.ddns.net, Port: 70
+----------------------------------
+Total Unique Path: 39
+----------------------------------
+----------------------------------

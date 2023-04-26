@@ -1,0 +1,6 @@
+--- Summary of all the External Directory ---
+1-> Name: "Floodgap Systems (modern home of the Gopher community)", Path: , Address: gopher.floodgap.com, Port: 70
+---------------------------------------------
+Total External Directory Count: 1
+---------------------------------------------
+---------------------------------------------

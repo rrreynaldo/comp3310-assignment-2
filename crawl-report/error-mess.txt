@@ -1,0 +1,7 @@
+--- Summary of all the Error Message ---
+1-> Name: "I don't have the resource you asked for.", From Path: /acme/products/traps
+2-> Name: "I don't have the resource you asked for.", From Path: /misc/nonexistent
+----------------------------------------
+Total Error Message: 2
+----------------------------------------
+----------------------------------------
