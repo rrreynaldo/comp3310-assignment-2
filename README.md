@@ -37,25 +37,65 @@ You may need to grant execute permission to the script before running it:
 
 Run the command only in the case that the code requires further permission.
 
+# Report
+## Wireshark
+The report for the Wireshark analysis are provided on the `wireshark-report.pdf`.
+On the occasion that the image is not sufficiently clear/too small, the image are available on `wireshark-1.png` and `wireshark-2.png`
+
+## Crawl Report
+The Crawling analysis report are provided when the code is run. Since the content for the largest text file size is too large too be displayed
+(it will overlap all the other information), the content are provided under the `text-file-content.txt` on the `crawl-report` folder.
+The resulting text analysis are produced by the crawling code.
+
+## What is in the report
+There are several component in the report:
+- Unique Path - List all the unique selector path within the Gopher Server
+- Directory - All the resources that are encoded with the code `1` based on RFC1436 definition
+- Text File - All the text file resources that are encoded with the code `0` based on the RFC1436 definition
+- Binary File - All the binary file resources that are encoded with the code `9` based on the RFC1436 definition
+- Error Message - All the error message resources that are encoded with the code `3` based on the RFC1436 definition.
+
+Similarly, the directory are divided into two category:
+- Internal - are directory that has the same address and port that are specified when running the crawling code
+- External - are directory that has the same address and port that are specified when running the crawling code
+
+External directory are not crawled, only internal directory are transversed.
+
+# Code Concept and Logic
 ## Code Algorithm to Crawl the Server
 The codes implement a depth first search algorithm which transverse down to every directory in the server.
 
-While transversing each directory, it kept a list of the unique path for a directory in the server. 
+While transversing each directory, it kept a list of the unique path for a directory in the server.
 This allows the algorithm prevent loops of visiting the same directory over and over again.
-Similarly, it will also download any downloadable files that it encounter while transversing the directory.
+Similarly, it will also download any downloadable files that it encounter while transversing the directory, 
+and keeps in record for all the resources including error message, text, binary, and directory information
+
+## Why Depth First Search
+The reason why a depth-first search (DFS) algorithm is used is because it enables efficient exploration of the server's 
+directory structure by visiting all the subdirectories of a particular directory before backtracking. 
+This allows for a comprehensive traversal of the entire directory hierarchy, 
+ensuring that no directories or files are missed during the crawling process. 
+Furthermore, DFS is memory-efficient compared to breadth-first search (BFS) since it doesn't require the storage of 
+all nodes at a given level in the hierarchy.
+
+DFS algorithms work by starting at the root directory and exploring as far as possible along each branch before backtracking. 
+This allows the algorithm to dive deep into the directory structure and retrieve all the contents of each subdirectory, 
+including files and other resources. By exhaustively visiting all subdirectories in a depth-first manner, 
+the algorithm ensures that no part of the directory hierarchy is left unexplored.
 
 ## Files Downloaded
-The files are downloaded into the "crawl-download" folder on the main code repository.
+The files are downloaded into the `crawl-download` folder on the main code repository.
 The names of the downloaded files follows the original path from the server.
 
-For example, for a file with path "/rfc1436.txt", and a description/name of "RFC 1436 (describes the Gopher protocol)",
-the crawler will download the file and named it "rfc1436.txt" inside the "crawl-download" folder.
+For example, for a file with path `/rfc1436.txt`, and a description/name of `RFC 1436 (describes the Gopher protocol)`,
+the crawler will download the file and named it `rfc1436.txt` inside the `crawl-download` folder.
 
-In the case that the file are located in multiple directory such as /acme/about, then the file naming would replace every "/"
-with "-".
+In the case that the file are located in multiple directory such as /acme/about, then the file naming would replace every `/`
+with `-`.
 
-For example, a file with the path "/acme/about", would be downloaded with the name "acme-about".
+For example, a file with the path `/acme/about`, would be downloaded with the name `acme-about`.
 
 File extension for the downloaded files follow the extension in the server.
-For binary file, if there is no extension specification from the server, then the downloaded file would have 
-a default ".bin"
+
+On the case that the file name exceed 255 character (the maximum file name length in Linux), then it will be truncated to 255 with 
+the extension preserved.
