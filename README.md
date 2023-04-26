@@ -5,7 +5,7 @@ The main purpose of this program is to crawl Gopher servers and fetch resources 
 The primary source code file is ClientGopher.java.
 
 ## Requirements
-Java Development Kit (JDK) 8 or above. It is recommended to compile the source code with JDK 17 or 18.
+- Java Development Kit (JDK) 8 or above (compiling with JDK 17 or 18 is recommended).
 
 ## Compilation
 To compile the program, navigate to the directory containing the ClientGopher.java file and run the following command:
@@ -48,7 +48,7 @@ The Crawling analysis report are provided when the code is run. Since the conten
 The resulting text analysis are produced by the crawling code.
 
 ## What is in the report
-There are several component in the report:
+The report contains several components:
 - Unique Path - List all the unique selector path within the Gopher Server
 - Directory - All the resources that are encoded with the code `1` based on RFC1436 definition
 - Text File - All the text file resources that are encoded with the code `0` based on the RFC1436 definition
@@ -56,10 +56,10 @@ There are several component in the report:
 - Error Message - All the error message resources that are encoded with the code `3` based on the RFC1436 definition.
 
 Similarly, the directory are divided into two category:
-- Internal - are directory that has the same address and port that are specified when running the crawling code
-- External - are directory that has the same address and port that are specified when running the crawling code
+- Internal - Directories with the same address and port specified when running the crawling code
+- External - Directories with different address and port compared to those specified when running the crawling code
 
-External directory are not crawled, only internal directory are transversed.
+Only internal directories are traversed; external directories are not crawled.
 
 # Code Concept and Logic
 ## Code Algorithm to Crawl the Server
@@ -90,12 +90,35 @@ The names of the downloaded files follows the original path from the server.
 For example, for a file with path `/rfc1436.txt`, and a description/name of `RFC 1436 (describes the Gopher protocol)`,
 the crawler will download the file and named it `rfc1436.txt` inside the `crawl-download` folder.
 
-In the case that the file are located in multiple directory such as /acme/about, then the file naming would replace every `/`
-with `-`.
-
-For example, a file with the path `/acme/about`, would be downloaded with the name `acme-about`.
+If a file is located in multiple directories, such as `/acme/about`, the file naming replaces every `/` with `-`. 
+For example, a file with the path `/acme/about` would be downloaded with the name `acme-about`.
 
 File extension for the downloaded files follow the extension in the server.
 
-On the case that the file name exceed 255 character (the maximum file name length in Linux), then it will be truncated to 255 with 
-the extension preserved.
+If a file name exceeds 255 characters (the maximum file name length in Linux), it will be truncated to 255 with the extension preserved.
+
+## Extension (Outside of Assignment Requirement)
+In addition to being a Gopher Crawler, the code can support an interactive Gopher Client for users to connect to a server. 
+To do this, run the command:
+
+`java ClientGopher.java [address] [port]`
+
+This will connect to the client and allow the user to navigate through the resources and directories by entering the 
+path of the desired directory or file into the terminal.
+
+For example, the client might display directory information as follows:
+
+`(DIR)	ACME Rocket-Powered Products Pty. Ltd.	[/acme]`
+
+The user can navigate to the directory by entering the path `/acme` in the prompted terminal.
+
+Similarly, the user can download text or binary file by entering the path of that file.
+
+For example, to download the content of the text file:
+
+`(FILE)	RFC 1436 (describes the Gopher protocol)	[/rfc1436.txt]`
+
+The user can enter the path `/rfc1436.txt` to the terminal.
+
+In case the user wants to crawl inside the interactive Gopher Client, they can use the command crawl to perform a crawling method. 
+To quit the Gopher client, the user can enter the command q.
