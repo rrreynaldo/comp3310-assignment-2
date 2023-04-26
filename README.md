@@ -3,6 +3,7 @@
 This is a simple Java-based Gopher crawler. 
 The main purpose of this program is to crawl Gopher servers and fetch resources using the Gopher protocol. 
 The primary source code file is ClientGopher.java.
+You can view the content and clone the repository from https://github.com/rrreynaldo/comp3310-assignment-2
 
 ## Requirements
 - Java Development Kit (JDK) 8 or above (compiling with JDK 17 or 18 is recommended).
