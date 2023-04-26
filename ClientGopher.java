@@ -118,20 +118,20 @@ public class ClientGopher {
         System.out.println("client: closed socket and terminating");
     }
 
-    static ArrayList<File> visitedPath = new ArrayList<>();
-    static ArrayList<File> directoryCrawlList = new ArrayList<>();
-    static ArrayList<File> internalDirCrawList = new ArrayList<>();
-    static ArrayList<File> externalDirCrawlList = new ArrayList<>();
-    static ArrayList<File> textFileCrawlList = new ArrayList<>();
-    static ArrayList<File> binaryFileCrawlList = new ArrayList<>();
-    static ArrayList<File> errorCrawList = new ArrayList<>();
-
-    static ArrayList<String> uniqueCode = new ArrayList<>();
+    // A sets of array list that is used for the crawler to keep track of the different resources
+    static ArrayList<File> visitedPath = new ArrayList<>();     // List of all the visited path selector
+    static ArrayList<File> directoryCrawlList = new ArrayList<>();      // List of all the directory
+    static ArrayList<File> internalDirCrawList = new ArrayList<>();     // List of all internal directory
+    static ArrayList<File> externalDirCrawlList = new ArrayList<>();    // List of all external directory
+    static ArrayList<File> textFileCrawlList = new ArrayList<>();       // List of all text file
+    static ArrayList<File> binaryFileCrawlList = new ArrayList<>();     // List of all binary file
+    static ArrayList<File> errorCrawList = new ArrayList<>();           // List of all the error code
 
     public static void crawl() throws IOException {
         System.out.println("--".repeat(5) + " Started Crawling " + "--".repeat(5));
         // Opening a new socket connection
         connectSocket();
+        // Starts with an empty directory with a empty request to get the initial directory list
         Directory directoryNavigation = new Directory();
 
         // Getting the initial default response from the Gopher Server
@@ -158,17 +158,14 @@ public class ClientGopher {
             }
         }
 
-        crawlerReport("Summary of the Unique Path",
-                        "Total Unique Path",
-                        visitedPath, "unique-path.txt");
+        // Providing the report for each of the resources in the Gopher Server
+        crawlerReport("Summary of the Unique Path", "Total Unique Path", visitedPath, "unique-path.txt");
         crawlerReport("Summary of all the Directory (Internal and External)",
-                        "Total Internal and External Directory Count",
-                        directoryCrawlList, "internal-external-directory.txt");
-        crawlerReport("Summary of all the Internal Directory",
-                        "Total Internal Directory Count",
+                        "Total Internal and External Directory Count", directoryCrawlList,
+                        "internal-external-directory.txt");
+        crawlerReport("Summary of all the Internal Directory", "Total Internal Directory Count",
                         internalDirCrawList, "internal-directory.txt");
-        crawlerReport("Summary of all the External Directory",
-                        "Total External Directory Count",
+        crawlerReport("Summary of all the External Directory", "Total External Directory Count",
                         externalDirCrawlList, "external-directory.txt");
         crawlerReport("Summary of all the Text File", "Total Text File Count", textFileCrawlList, "text-file.txt");
         crawlerReport("Summary of all the Binary File", "Total Binary File Count", binaryFileCrawlList, "binary-file.txt");
@@ -176,9 +173,15 @@ public class ClientGopher {
         crawlFileReport("Summary of the Smallest and Largest Text File", "Text File", textFileCrawlList);
         crawlFileReport("Summary of the Smallest and Largest Binary File", "Binary File", binaryFileCrawlList);
 
+        // Closing the connection of the so
         socket.close();
     }
 
+    /**
+     * This is a helper method for the crawler that is used to recurse through all the sub directory in the server
+     * @param directory The current directory to crawl
+     * @throws IOException
+     */
     public static void crawlHelper(Directory directory) throws IOException {
         // Download all the text file in the current directory path and update the file size
         for (File textFile : directory.getTextFileList()) {
@@ -218,7 +221,6 @@ public class ClientGopher {
                 while (inputStream.ready()) {
                     inputStream.readLine();
                 }
-
                 // Parsing the response from the server
                 parseResponse(inputStream, subDirectory);
                 // Recurse through the sub-directory
@@ -227,6 +229,13 @@ public class ClientGopher {
         }
     }
 
+    /**
+     * Provide a summarization for a resources in the server
+     * @param title The title of the Summary
+     * @param countName The variable name of the resources (Resource object)
+     * @param data An arraylist of the data
+     * @param outputPath The output path for the text file of the report
+     */
     public static void crawlerReport(String title, String countName, ArrayList<File> data, String outputPath) {
         String directory = "crawl-report";
         try {
@@ -264,6 +273,12 @@ public class ClientGopher {
         }
     }
 
+    /**
+     * Provide a summarization for a file or binary resource in the server (Analysing the content and file size)
+     * @param title The title of the Summary
+     * @param countName The variable name of the resources (Resource object)
+     * @param data An arraylist of the data
+     */
     public static void crawlFileReport(String title, String countName, ArrayList<File> data) {
         // Find the smallest and largest files using the max function and a comparator
         File smallest = data.stream()
@@ -277,6 +292,7 @@ public class ClientGopher {
         // Parsing the file name for the report
         String fileName = countName.toLowerCase().replace(" ", "-");
 
+        // Creating a fancy summary for the file report
         System.out.println("-".repeat(3) + " " + title + " " + "-".repeat(3));
         System.out.println("The Smallest " + countName + ": " + smallest.filePrint());
         System.out.println("The Smallest " + countName + " file size: " + smallest.getSize() + " Bytes");
@@ -288,22 +304,38 @@ public class ClientGopher {
         System.out.println("-".repeat(8 + title.length()));
         System.out.println("-".repeat(8 + title.length()));
 
-        // Writing the content of the file to a report
+        // Writing the content of the file to an external file
         printFileContent(smallest, largest, title, fileName + "-content-report.txt", countName);
     }
 
+    /**
+     * A method to both print to the terminal and write to an output file
+     * @param fileWriter File writer for the output file
+     * @param message The content to be written
+     */
     private static void printToBoth(PrintWriter fileWriter, String message) {
         System.out.println(message);
         fileWriter.println(message);
     }
 
+    /**
+     * A method to print the content of a binary or text file into a report
+     * (A helper method for the crawlFileReport)
+     * @param smallestFile The smallest file for the type
+     * @param largestFile The largest file for the type
+     * @param title The title of the report
+     * @param outputFileName The output file name
+     * @param reportObject The variable name of the resources (Resource object)
+     */
     private static void printFileContent(File smallestFile, File largestFile, String title, String outputFileName, String reportObject) {
+        // Parse and load the smallest file name
         String smallestFileName = smallestFile.getPath().substring(1).replace("/", "-");
-        smallestFileName = smallestFileName.substring(0, Math.min(smallestFileName.length(), 255));
+        smallestFileName = truncateFilename(smallestFileName, 255);
         java.io.File smallestLocalFile = new java.io.File("./crawl-download", smallestFileName);
 
+        // Parse and load the largest file name
         String largestFileName = largestFile.getPath().substring(1).replace("/", "-");
-        largestFileName = largestFileName.substring(0, Math.min(largestFileName.length(), 255));
+        largestFileName = truncateFilename(largestFileName, 255);
         java.io.File largestLocalFile = new java.io.File("./crawl-download", largestFileName);
 
         try {
@@ -313,13 +345,16 @@ public class ClientGopher {
             // Save the output file in the "crawl-report" folder
             Path outputFile = Paths.get("crawl-report", outputFileName);
 
+            // A variable containing -
             String lineBreaker = "-".repeat(8 + title.length()) + "\n";
 
+            // Reading the content of the smallest and largest file
             String smallestContent = new String(Files.readAllBytes(Paths.get(smallestLocalFile.toURI()))).replace("\r", "");
             String largestContent = new String(Files.readAllBytes(Paths.get(largestLocalFile.toURI()))).replace("\r", "");
 
             // Use try-with-resources to ensure the PrintWriter is closed
             try (PrintWriter fileWriter = new PrintWriter(Files.newBufferedWriter(outputFile))) {
+                // Writing a fancy report to the file
                 fileWriter.write("-".repeat(3) + " " + title + " " + "-".repeat(3) + "\n");
                 fileWriter.write("Smallest " + reportObject + ": " + smallestFile.getPath() + "\n");
                 fileWriter.write("Content: " + smallestContent + "\n");
@@ -352,7 +387,7 @@ public class ClientGopher {
         // Parsing the file name of the downloaded file
         String fileName = file.getPath().substring(1).replace("/", "-");
         // Truncate the name of the file to a maximum of 255 if it is too long
-        fileName = fileName.substring(0, Math.min(fileName.length(), 255));
+        fileName = truncateFilename(fileName, 255);
 
         // Create a local file to save the content
         java.io.File localFile = new java.io.File(downloadDirectory, fileName);
@@ -374,6 +409,25 @@ public class ClientGopher {
         socketInputStream.close();
         fileOutputStream.close();
         socket.close();
+    }
+
+    public static String truncateFilename(String fileName, int maxLength) {
+        if (fileName.length() <= maxLength) {
+            return fileName;
+        }
+
+        int extensionIndex = fileName.lastIndexOf(".");
+        String nameWithoutExtension = fileName;
+        String extension = "";
+
+        if (extensionIndex != -1) {
+            nameWithoutExtension = fileName.substring(0, extensionIndex);
+            extension = fileName.substring(extensionIndex);
+        }
+
+        int nameLength = maxLength - extension.length();
+        String truncatedName = nameWithoutExtension.substring(0, Math.min(nameWithoutExtension.length(), nameLength));
+        return truncatedName + extension;
     }
 
     public static void connectSocket() {
